@@ -14,5 +14,6 @@ parseLine s = let (i1, s1) = parser s
 
 main :: IO ()
 main = do
-  pairs <- filter (\(i1,i2,i3,i4) -> i1 <= i3 && i2 >= i4 || i1 >= i3 && i2 <= i4) . map parseLine . lines <$> readFile "input"
-  print $ length pairs
+  pairs <- map parseLine . lines <$> readFile "input"
+  putStrLn . ("Solution 1: " <>) . show . length . filter (\(i1,i2,i3,i4) -> i1 <= i3 && i2 >= i4 || i1 >= i3 && i2 <= i4) $ pairs
+  putStrLn . ("Solution 2: " <>) . show . length . filter (\(i1,i2,i3,i4) -> (any (>1) . scanl' (+) 0 . map snd . sortOn fst) [(i1, 1), (i2 + 1, -1), (i3, 1), (i4, -1)]) $ pairs
