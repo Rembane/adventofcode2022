@@ -1,11 +1,50 @@
 {-# LANGUAGE LambdaCase #-}
 module Main where
 
-data RPS = Rock | Paper | Scissors
-  deriving (Eq, Show)
+import qualified Data.Map.Strict as M
+import Data.Maybe
 
-data LoseDrawWin = Lose | Draw | Win
-  deriving Show
+data RPS = Rock | Paper | Scissors
+  deriving (Eq, Ord, Show)
+
+data Outcome = LeftWins | RightWins | Draw
+  deriving (Eq, Ord)
+
+data Relation = Relation RPS RPS Outcome
+
+type Me = RPS
+type Opponent = RPS
+
+table :: [Relation]
+table =
+  [ Relation Rock     Rock     Draw
+  , Relation Rock     Paper    RightWins
+  , Relation Rock     Scissors LeftWins
+  , Relation Paper    Rock     LeftWins
+  , Relation Paper    Paper    Draw
+  , Relation Paper    Scissors RightWins
+  , Relation Scissors Rock     RightWins
+  , Relation Scissors Paper    LeftWins
+  , Relation Scissors Scissors Draw
+  ]
+
+firstStrategyGuide :: Opponent -> Me -> Int
+firstStrategyGuide opp me =
+  let t = M.fromList (map (\(Relation o m r) -> ((o, m), r)) table)
+   in scoreRPS me + case fromJust (M.lookup (opp, me) t) of
+     LeftWins  -> 0
+     Draw      -> 3
+     RightWins -> 6
+
+secondStrategyGuide :: Opponent -> Outcome -> Int
+secondStrategyGuide opp out =
+  let t = M.fromList (map (\(Relation o m r) -> ((o, r), m)) table)
+      me = fromJust (M.lookup (opp, out) t)
+   in scoreRPS me + case out of
+     LeftWins  -> 0
+     Draw      -> 3
+     RightWins -> 6
+
 
 parseRPS :: String -> RPS
 parseRPS = \case
@@ -23,36 +62,14 @@ scoreRPS = \case
   Paper    -> 2
   Scissors -> 3
 
-parseLoseDrawWin :: String -> LoseDrawWin
-parseLoseDrawWin = \case
-  "X" -> Lose
+parseWhoWins :: String -> Outcome
+parseWhoWins = \case
+  "X" -> LeftWins
   "Y" -> Draw
-  "Z" -> Win
-
--- | First player is me, the result is how many points I would get.
-playRound :: RPS -> RPS -> Int
-playRound Rock  Paper    = 0 + scoreRPS Rock
-playRound Rock  Scissors = 6 + scoreRPS Rock
-playRound Paper Rock     = 6 + scoreRPS Paper
-playRound Paper Scissors = 0 + scoreRPS Paper
-playRound Scissors Rock  = 0 + scoreRPS Scissors
-playRound Scissors Paper = 6 + scoreRPS Scissors
-playRound me opponent
-  | me == opponent = 3 + scoreRPS me
-
-playSneakily :: RPS -> LoseDrawWin -> RPS
-playSneakily Rock     Lose = Paper
-playSneakily Rock     Win  = Scissors
-playSneakily Paper    Lose = Rock
-playSneakily Paper    Win  = Scissors
-playSneakily Scissors Lose = Paper
-playSneakily Scissors Win  = Rock
-playSneakily rps      Draw = rps
+  "Z" -> RightWins
 
 main :: IO ()
 main = do
-  input <- map words . lines <$> readFile "input2"
-  putStrLn . ("First part: " <>) . show . sum . map ((\[them, me] -> playRound me them) . map parseRPS)   $ input
-  putStrLn . ("Second part: " <>) . show . sum . map (\[them, guide] -> let theirPlay = parseRPS them in playRound (playSneakily theirPlay (parseLoseDrawWin guide)) theirPlay) $ input
-  -- putStrLn . ("Second part: " <>) . show . map (\[them, guide] -> let theirPlay = parseRPS them in (theirPlay, parseLoseDrawWin guide, playSneakily theirPlay (parseLoseDrawWin guide))) $ input
-
+  input <- map words . lines <$> readFile "input"
+  putStrLn . ("First part: " <>) . show . sum . map ((\[them, me] -> firstStrategyGuide them me) . map parseRPS) $ input
+  putStrLn . ("Seconds part: " <>) . show . sum . map (\[w1,w2] -> secondStrategyGuide (parseRPS w1) (parseWhoWins w2)) $ input
