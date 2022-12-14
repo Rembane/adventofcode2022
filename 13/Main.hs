@@ -13,7 +13,11 @@ import Text.Megaparsec.Char
 data Packet
   = PInt Int
   | PP [Packet]
-  deriving (Eq, Show)
+  deriving Eq
+
+instance Show Packet where
+  show (PInt i) = show i
+  show (PP ps)  = "[" <> intercalate "," (map show ps) <> "]"
 
 instance Ord Packet where
   compare (PInt i)      (PInt j)      = compare i j
@@ -34,5 +38,12 @@ packetParser = ((,) <$> (parseOnePacket <* newline) <*> (parseOnePacket <* newli
 
 main :: IO ()
 main = do
-  c <- readFile "input"
-  (print . sum . map fst . filter snd . zipWith (\idx (p1, p2) -> (idx, p1 <= p2)) [1..] . fromJust . parseMaybe packetParser) c
+  pairs <- fromJust . parseMaybe packetParser <$> readFile "input"
+  putStrLn ""
+  putStr "Solution 1: "
+  (print . sum . map fst . filter snd . zipWith (\idx (p1, p2) -> (idx, p1 <= p2)) [1..]) pairs
+
+  putStr "Solution 2: "
+  let dividerPackets = [PP [PP [PInt 2]], PP [PP [PInt 6]]]
+  let sortedList = sort (dividerPackets ++ concatMap (\(a,b) -> [a,b]) pairs)
+  (print  . product . map (\p -> 1 + fromJust (elemIndex p sortedList))) dividerPackets
