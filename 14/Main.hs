@@ -63,8 +63,25 @@ fallUntilResting (Point (x, y)) cave = M.lookup x cave >>= M.lookupGT y >>= (\(y
                  Just _  -> pure $ updateCell (Point (x, y' - 1)) Sand cave
   )
 
+fallUntilRestingOnInfiniteFloor :: Int -> Point -> Cave -> (Point, Cave)
+fallUntilRestingOnInfiniteFloor infiniteFloorLevel (Point (x, y)) cave =
+  let result = M.lookup x cave >>= M.lookupGT y >>= (\(y', _) ->
+                case getCell (Point (x-1, y')) cave of
+                  Nothing -> pure $ fallUntilRestingOnInfiniteFloor infiniteFloorLevel (Point (x-1, y')) cave
+                  Just _  -> case getCell (Point (x+1, y')) cave of
+                               Nothing -> pure $ fallUntilRestingOnInfiniteFloor infiniteFloorLevel (Point (x+1, y')) cave
+                               Just _  -> pure (Point (x, y' - 1), updateCell (Point (x, y' - 1)) Sand cave)
+                )
+   in fromMaybe (Point (x, infiniteFloorLevel - 1), updateCell (Point (x, infiniteFloorLevel - 1)) Sand (updateCell (Point (x, infiniteFloorLevel)) Rock cave)) result
+
 main :: IO ()
 main = do
   cave <- foldr (\p cave -> updateCell p Rock cave) M.empty . concatMap interpolateLine . fromJust . parseMaybe (lineParser `sepBy` newline) <$> readFile "input"
 
+  putStr "Part 1: "
   print . length . unfoldr (fmap (1,) . fallUntilResting (Point (500,0))) $ cave
+
+  let infiniteFloorLevel = (2+) . maximum . concatMap M.keys . M.elems $ cave
+
+  putStr "Part 2: "
+  print . length . takeWhile ((/= Point (500,0)) . fst) . iterate (fallUntilRestingOnInfiniteFloor infiniteFloorLevel (Point (500, 0)) . snd) $ (Point (0, 0), cave)
