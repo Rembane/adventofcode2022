@@ -44,6 +44,11 @@ mover Move {quantity, source, destination} m =
   let (top, rest) = splitAt quantity (m M.! source)
    in M.adjust (reverse top ++) destination (M.insert source rest m)
 
+mover9001 :: Move -> Map Int [Crate] -> Map Int [Crate]
+mover9001 Move {quantity, source, destination} m =
+  let (top, rest) = splitAt quantity (m M.! source)
+   in M.adjust (top ++) destination (M.insert source rest m)
+
 main :: IO ()
 main = do
   fileContents <- readFile "input"
@@ -62,4 +67,6 @@ main = do
                 fileContents
   case result of
     Left  e               -> error (show e)
-    Right (stacks, moves) -> putStrLn ("Answer part 1: " ++ show (map (unCrate . head . snd) $ M.toAscList $ foldl' (flip mover) stacks moves))
+    Right (stacks, moves) -> do
+      putStrLn ("Answer part 1: " ++ show (map (unCrate . head . snd) $ M.toAscList $ foldl' (flip mover) stacks moves))
+      putStrLn ("Answer part 2: " ++ show (map (unCrate . head . snd) $ M.toAscList $ foldl' (flip mover9001) stacks moves))
