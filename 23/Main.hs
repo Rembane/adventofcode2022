@@ -53,5 +53,9 @@ main = do
 
   let elves' = loop elves [north, south, west, east] !! 10
   let ((xMin, xMax), (yMin, yMax)) = (both ((getMin *** getMax) . foldMap (Min &&& Max)) . unzip . S.toList) elves'
+  putStr "Part one: "
   print (((succ xMax - xMin) * (succ yMax - yMin)) - S.size elves')
   -- putStrLn $ toGrid $ loop elves [north, south, west, east] !! 10
+
+  putStr "Part two: "
+  (print . succ . length . takeWhile (uncurry (/=)) . uncurry zip . (id &&& drop 1)) (loop elves [north, south, west, east])
