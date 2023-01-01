@@ -1,0 +1,12 @@
+cabal-version:      2.4
+name:               x8
+version:            0.1.0.0
+
+license:            MIT
+author:             Rembane
+
+executable x8
+    main-is:          Main.hs
+    build-depends:    base ^>=4.16.0.0,
+                      vector == 0.13.0.0
+    default-language: Haskell2010
